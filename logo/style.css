@@ -48,6 +48,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  font-family: 'Poppins', sans-serif;
 }
 
 .glass {
@@ -118,6 +119,7 @@ body {
   color: var(--text-secondary);
   font-weight: 600;
 }
+
 /*-- Tailwind Custom Neon Glow */
 .hover\:drop-shadow-neon:hover {
     filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.6));
