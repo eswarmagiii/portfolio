@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESWAR MAGI PORTFOLIO</title>
+    <link rel="shortcut icon" type="image/png" href="logo/salesforce (2).png" />
+   <!-- ✅ Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ Font Awesome CDN -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+/>
+    <link rel="stylesheet" href="logo/style.css" />
+  </head>
+  <body class="min-h-screen transition-colors duration-300">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass">
+      <div class="container mx-auto px-6 py-4">
+        <div class="nav-container">
+          <!-- Mobile Menu Button (should be here!) -->
+          <button
+            id="mobile-menu-button"
+            class="md:hidden mobile-menu-button"
+            title="Open Mobile Menu"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+          <!-- Logo -->
+          <a href="#" class="nav-logo">
+            <img
+              src="logo/salesforce (2).png"
+              alt="Salesforce"
+              class="h-12 w-auto"
+            />
+          </a>
+          <!-- Center: Navigation -->
+          <div class="hidden md:flex space-x-8 desktop-nav mx-auto">
+            <a
+              href="#home"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >Home</a
+            >
+            <a
+              href="#about"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >About</a
+            >
+            <a
+              href="#skills"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >Skills</a
+            >
+          
+            <a
+              href="#certifications"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >Certifications</a
+            >
+            <a
+              href="#projects"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >Projects</a
+            >
+            <a
+              href="#contact"
+              class="nav-link relative hover:text-sky-400 transition-colors"
+              >Contact</a
+            >
+          </div>
+          <!-- Right: Theme Toggle -->
+
+          <!-- Theme Toggle Switch -->
+          <label class="switch" title="Toggle Theme">
+            <input type="checkbox" id="theme-toggle" />
+            <span class="slider"></span>
+            <span class="clouds_stars"></span>
+          </label>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Add Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu">
+      <button
+        id="mobile-menu-close"
+        class="mobile-menu-close"
+        title="Close Mobile Menu"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
+      </button>
+      <div class="mobile-nav-links">
+        <a href="#home" class="mobile-nav-link">Home</a>
+        <a href="#about" class="mobile-nav-link">About</a>
+        <a href="#skills" class="mobile-nav-link">Skills</a>
+        <a href="#certifications" class="mobile-nav-link">Certifications</a>
+        <a href="#projects" class="mobile-nav-link">Projects</a>
+        <a href="#contact" class="mobile-nav-link">Contact</a>
+      </div>
+    </div>
+
+    <!-- Hero/Home Section -->
+    <section
+        id="home"
+        class="min-h-screen flex items-center justify-center pt-20 px-6"
+      >
+  <div class="container mx-auto text-center">
+   
+
+<div class="typewriter">
+  <h1 class="text-5xl md:text-7xl font-bold mb-6 mt-8 md:mt-0 text-gray-sky dark:text-blue-100">
+    Hi, I'm <span class="text-sky-400">ESWAR</span>
+  </h1>
+</div>
+
+    <p class="text-2xl md:text-3xl font-semibold mb-12 text-blue-400 ">
+      Salesforce Developer
+    </p>
+   <h5 id="typewriter" class="text-sm md:text-base font-mono font-normal mb-3 text-gray-400 dark:text-gray-400 leading-relaxed whitespace-pre-line"></h5>
+
+<div class="flex justify-center space-x-6">
+          <a
+            href="#contact"
+            class="px-8 py-3 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold shadow-lg transform transition duration-500 hover:scale-110 hover:shadow-blue-500/50 animate-pulse"
+            >Contact Me</a
+          >
+          <a
+            href="https://drive.google.com/file/d/1tK9jIHQ5qVF-bJEu9eCtIIxwdtIX3TY2/view?usp=sharing"
+            target="_blank"
+            class="px-8 py-3 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold shadow-lg transform transition duration-500 hover:scale-110 hover:shadow-blue-500/50 flex items-center space-x-2 animate-pulse"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            Download CV
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!--  About Section -->
+    <section id="about" class="py-20 px-6 section-fade relative">
+      
+      <div class="container mx-auto">
+        <div class="glass p-12 max-w-4xl mx-auto">
+          <h2
+            class="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-600"
+          >
+            About Me
+          </h2>
+          <div class="space-y-6" style="color: var(--text-secondary)">
+            <p>
+              I am an Aspiring Salesforce Developer with a strong passion for technology, problem-solving, and innovation. <br>My journey into Salesforce began with a transition from business development to a more technical role, where I could leverage my analytical skills and creativity to build impactful solutions.
+My prior experience in business development gives me a unique perspective<br>on bridging technical solutions with business needs, enabling me to create solutions that drive real value. I am eager to collaborate, learn, and contribute to innovative Salesforce projects that transform customer experiences.
+            </p>
+            <p>I am actively seeking Salesforce Developer roles <br>where I can apply my knowledge, contribute to impactful projects, and grow with in the Salesforce ecosystem.</p>
+            <div class="space-y-4">
+              <h3 class="text-xl font-semibold">
+                My technical expertise includes:
+              </h3>
+              <ul class="list-disc list-inside space-y-2 pl-4">
+                <li>Knowledge On Apex, SOQL, SOSL</li>
+                <li>Basic Knowledge On  Lightning Web Components (LWC) According To Business Needs</li>
+                <li>Salesforce Administration & Customization<br>(Profiles, Permission Sets, Sharing Rules, Reports & Dashboards, Flows)</li>
+                <li>Knowledge On Triggers</li>
+                <li>REST & SOAP API Integrations</li>
+                <li>Workflow Automation (Process Builder, Flow)</li>
+                <li>Security & Data Management</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="py-20 px-6 section-fade">
+      <div class="section-container">
+        <div class="section-title-wrapper relative">
+          <!-- Codey next to Skills title -->
+         
+          <p class="section-subtitle">My Developer Toolkit</p>
+          <h2 class="section-title">Skills That Power My Code</h2>
+        </div>
+
+        <!-- Salesforce Development Skills -->
+        <div class="skill-category relative">
+          <!-- Einstein near Salesforce Development -->
+         
+          <h3 class="category-title">Salesforce, Web Tech, APIs, and More</h3>
+            <!-- Row 1 - Scroll Left -->
+  <div class="skills-fade-container">
+    <div class="marquee" id="row1"></div>
+  </div>
+
+  <!-- Row 2 - Scroll Right -->
+  <div class="skills-fade-container">
+    <div class="marquee reverse" id="row2"></div>
+  </div>
+</section>
+
+    <!--  Certifications Section -->
+    <section id="certifications" class="py-20 px-6 section-fade">
+      <h2
+          class="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-600"
+        >
+          Certifications <span class="text-[#ff462b]">&</span> Badges
+        </h2>
+        <!-- Certification Cards -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 mt-20 max-w-4xl mx-auto"
+        >
+          <div
+            class="glass p-6 hover-scale transform transition-all duration-300 hover:scale-105"
+          >
+            <img
+              src="logo/ranger (1).png"
+              alt="Ranger"
+              class="w-30 h-28 mx-auto mb-4 animate-float"
+            />
+            <h3 class="text-lg font-semibold gradient-text bg-gradient-to-r from-sky-400 to-blue-600">Ranger</h3>
+          </div>
+          <div
+            class="glass p-6 hover-scale transform transition-all duration-300 hover:scale-105"
+          >
+            <img
+              src="logo/Agentforce_Associate.png"
+              alt="AI Associate"
+              class="w-30 h-28 mx-auto mb-4 animate-float"
+            />
+            <h3 class="text-lg font-semibold gradient-text bg-gradient-to-r from-sky-400 to-blue-600">AI Associate</h3>
+          </div>
+          <div
+            class="glass p-6 hover-scale transform transition-all duration-300 hover:scale-105"
+          >
+            <img
+              src="logo/PD1.png"
+              alt="DEVELOPER PD1"
+              class="w-30 h-28 mx-auto mb-4 animate-float"
+            />
+            <h3 class="text-lg font-semibold gradient-text bg-gradient-to-r from-sky-400 to-blue-600">
+              Developer
+            </h3>
+            <h5 class="text-sm text-white">
+             In Progress
+            </h5>
+          </div>
+        </div>
+    </section>
+
+    <!-- 6. Projects Section -->
+    <section id="projects" class="py-20 px-6 section-fade">
+      <div class="container mx-auto">
+        <h2
+          class="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-600"
+        >
+          My Salesforce Projects
+        </h2>
+        <div class="flex flex-wrap justify-center gap-8">
+      <!-- Project Card 1 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-80 transform hover:scale-105 transition">
+        <img src="project/Screenshot (452).png" alt="Salesforce Lead Management" class="w-full h-40 object-cover">
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-blue-600">Salesforce Lead Management(SLM)</h3>
+          <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">
+            Built with LWC, Apex, Flows, and Web-to-Lead used for capturing leads, automating status updates & Opportunity creation, sending email alerts, and visualizing lead performance in dashboards.
+          </p>
+          <a href="https://www.linkedin.com/posts/eswar-magi-87b493278_salesforce-leadmanagement-apextriggers-activity-7304632296630849536-ibxT?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEOz4h8BLqZmX893a9JnvNJobhDEksCwOzc" target="_blank" class="text-blue-500 hover:underline text-sm mt-3 inline-block">
+            View on linkedin
+          </a>
+        </div>
+      </div>
+
+      <!-- Project Card 2 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-80 transform hover:scale-105 transition">
+        <img src="project/Screenshot (672).png" alt="Employee Exspense Trackers" class="w-full h-40 object-cover">
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-blue-600">Employee Exspense Trackers(EET)</h3>
+          <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">
+            Built with LWC, Apex, SOQL, Approval Processes, and Chart.js – used for employee expense submissions, approvals, email notifications, and visual reporting.
+          </p>
+          <a href="https://www.linkedin.com/posts/eswar-magi-87b493278_salesforce-lwc-apex-activity-7344432616042917889-27xB?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEOz4h8BLqZmX893a9JnvNJobhDEksCwOzc" target="_blank" class="text-blue-500 hover:underline text-sm mt-3 inline-block">
+            View on linkedin
+          </a>
+        </div>
+      </div>
+
+      <!-- Project Card 3 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-80 transform hover:scale-105 transition">
+        <img src="project/WhatsApp Image 2025-07-07 at 00.53.21_f2c40a25.jpg" alt="Lead Conversion Automation" class="w-full h-40 object-cover">
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-blue-600">Leave Management System (LMS)</h3>
+          <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">
+            Built with LWC and Apex that handles leave requests, approvals, and user-specific dashboards using custom objects and real-time data display.
+          </p>
+          <a href="https://github.com/eswarmagiii" target="_blank" class="text-blue-500 hover:underline text-sm mt-3 inline-block">
+            View on GitHub
+          </a>
+        </div>
+            
+         </div>
+       </div>  
+    </section>
+
+    <!-- 7. Contact Section (Final) -->
+   <!-- Contact Me - Web-to-Lead Integrated -->
+<section id="contact" class="py-20 px-6 section-fade">
+  <div class="container mx-auto">
+    <div class="max-w-2xl mx-auto section-card p-8 rounded-xl">
+      <h2
+        class="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-600"
+      >
+        Contact Me
+      </h2>
+
+      <form 
+        action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00DQy00000KvN83"
+        method="POST"
+        class="space-y-6"
+      >
+        <!-- Salesforce required hidden fields -->
+        <input type="hidden" name="oid" value="00DQy00000KvN83" />
+        <input type="hidden" name="retURL" value="https://eswarmagiii.github.io/portfolio/thankyou.html" />
+
+        <!-- Name (mapped to last_name in Salesforce) -->
+        <div>
+          <label class="block text-secondary mb-2">Name</label>
+          <input
+            type="text"
+            name="last_name"
+            required
+            placeholder="Your full name"
+            class="w-full px-4 py-2 rounded-lg bg-transparent border border-sky-200 dark:border-sky-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500"
+          />
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-secondary mb-2">Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="example@domain.com"
+            required
+            class="w-full px-4 py-2 rounded-lg bg-transparent border border-sky-200 dark:border-sky-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500"
+          />
+        </div>
+
+        <!-- Mobile -->
+        <div>
+          <label class="block text-secondary mb-2">Mobile No</label>
+          <input
+            type="tel"
+            name="mobile"
+            placeholder="+91 XXXXXXXXXX"
+            class="w-full px-4 py-2 rounded-lg bg-transparent border border-sky-200 dark:border-sky-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500"
+          />
+        </div>
+
+        <!-- Message (mapped to Description in Salesforce) -->
+        <div>
+          <label class="block text-secondary mb-2">Message</label>
+          <textarea
+            name="description"
+            rows="4"
+            placeholder="Write your message here..."
+            class="w-full px-4 py-2 rounded-lg bg-transparent border border-sky-200 dark:border-sky-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500"
+          ></textarea>
+        </div>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          class="w-full py-3 px-6 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white rounded-lg font-semibold transition-transform transform hover:scale-105 duration-300"
+        >
+          Send Message
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer
+  class="py-10 px-6 bg-gradient-to-tr from-[#0f172a]/60 via-[#1e293b]/40 to-[#0f172a]/60 
+             backdrop-blur-xl border-t border-blue-200/10 text-white"
+>
+  <div class="container mx-auto max-w-6xl">
+    <div
+      class="flex flex-col md:flex-row justify-between items-center md:items-start gap-10 md:gap-20"
+    >
+      <!-- Social Links with Neon Glow -->
+      <div class="flex justify-start space-x-9 md:ml-[-90px]">
+        <!-- your icons -->
+        <a
+          href="https://linkedin.com/in/eswar-magi-87b493278"
+          target="_blank"
+          class="text-[#0e76a8] hover:text-white hover:drop-shadow-neon transition"
+          title="LinkedIn"
+        >
+          <i class="fab fa-linkedin-in text-2xl"></i>
+        </a>
+        <a
+          href="https://github.com/eswarmagiii"
+          target="_blank"
+          class="text-gray-200 hover:text-white hover:drop-shadow-neon transition"
+          title="GitHub"
+        >
+          <i class="fab fa-github text-2xl"></i>
+        </a>
+        <a
+          href="https://www.salesforce.com/trailblazer/eswarmagi"
+          target="_blank"
+          class="text-sky-400 hover:text-white hover:drop-shadow-neon transition"
+          title="Salesforce Trailhead"
+        >
+          <i class="fab fa-salesforce text-2xl"></i>
+        </a>
+        <a
+          href="https://stackoverflow.com/users/30240694/eswar-magi"
+          target="_blank"
+          class="text-orange-500 hover:text-white hover:drop-shadow-neon transition"
+          title="Stack Overflow"
+        >
+          <i class="fab fa-stack-overflow text-2xl"></i>
+        </a>
+      </div>
+
+      <!-- Copyright -->
+      <div class="text-center md:text-left">
+        <p class="text-gray-400 font-medium"> © 2025 ESWAR MAGI All rights reserved.</p>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="text-center md:text-right space-y-1 md:mr-[-90px]">
+        <p class="text-sky-400 font-semibold uppercase tracking-widest">
+          Contact
+        </p>
+        <p class="text-white hover:text-sky-300 transition">
+          <i class="fas fa-envelope mr-2 text-sky-400"></i>
+          <a href="mailto:eswarmagi123456@gmail.com">
+            eswarmagi123456@gmail.com
+          </a>
+        </p>
+        <p class="text-white hover:text-sky-300 transition">
+          <i class="fas fa-phone-alt mr-2 text-sky-400"></i>+91 7358335093
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+   <!-- script for running in live server -->
+    <script src="logo/script.js"></script>
+    <script src="logo/script1.js"></script>
+    <script src="logo/script2.js"></script>
+    <!-- script for running in live server -->
+  </body>
+</html>

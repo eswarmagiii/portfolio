@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thank You</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(to right, #60a5fa, #38bdf8);
+        overflow: hidden;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .fade-in {
+        animation: fadeInUp 1.2s ease-out;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          transform: translateY(40px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .glow-btn {
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.8),
+          0 0 20px rgba(168, 85, 247, 0.6);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .glow-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(139, 92, 246, 1),
+          0 0 30px rgba(139, 92, 246, 0.8);
+      }
+
+      .gradient-text {
+        background: linear-gradient(to right, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textPulse 2s infinite alternate;
+      }
+
+      @keyframes textPulse {
+        from {
+          opacity: 0.8;
+          transform: scale(1);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1.03);
+        }
+      }
+
+      .glass-box {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen relative">
+    <!-- Confetti Canvas -->
+    <canvas
+      id="confettiCanvas"
+      class="absolute top-0 left-0 w-full h-full pointer-events-none"
+    ></canvas>
+
+    <!-- Thank You Card -->
+    <div
+      class="glass-box p-10 rounded-2xl shadow-2xl max-w-md text-center fade-in z-10"
+    >
+      <h1 class="text-5xl font-extrabold gradient-text mb-6">Thank You!</h1>
+      <p class="text-gray-800 text-lg mb-6">
+        Your message has been sent successfully.<br />
+        You’ll be redirected shortly...
+      </p>
+      <a
+        href="index.html"
+        class="inline-block mt-4 px-6 py-3 bg-purple-600 text-white rounded-full glow-btn text-lg font-semibold hover:bg-purple-700 transition"
+      >
+        Go Back Now
+      </a>
+    </div>
+<script src="logo/script3.js"></script>
+  </body>
+</html>
