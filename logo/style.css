@@ -107,6 +107,11 @@ body {
   text-transform: uppercase;
   letter-spacing: 2px;
 }
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
 
 .skill-category {
   margin-bottom: 4rem;
