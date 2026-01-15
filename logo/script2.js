@@ -1,5 +1,5 @@
 const text = `Passionate Salesforce Developer crafting scalable, user-centric business solutions.
-20× Superbadge Achiever • AI Associate Certified • Trailhead Ranger
+22× Superbadge Achiever • AI Associate Certified • Trailhead Double Star Ranger
 Skilled in Apex, LWC, Flows, and Triggers | Administrator & Developer Roles
 Expertise in Sales & Service Cloud, Integration, and Asynchronous Processing`;
 
