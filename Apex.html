@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>EswarMagi Salesforce Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<link rel="stylesheet" href="dress/Choco.css">
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div id="loader">
+  <div class="ld-logo">Eswar <span>Magi</span></div>
+  <div class="ld-bar-wrap"><div class="ld-bar"></div></div>
+  <div class="ld-pct" id="ld-pct">0%</div>
+  <div class="ld-matrix-hint">Initializing Matrix · Salesforce Dev Environment</div>
+</div>
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
+<div id="scroll-prog"></div>
+<button id="btt" aria-label="Back to top">↑</button>
+<canvas id="webgl-canvas"></canvas>
+
+<!-- DNA Helix side widget -->
+<div id="dna-widget"><canvas id="dna-canvas" width="28" height="220"></canvas></div>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ━━━━ WEBGL PARTICLES ━━━━ */
+function initWebGL(){
+  /* FIX: Skip WebGL on mobile — saves significant GPU/CPU on touch devices */
+  if(window.innerWidth <= 768){document.getElementById('webgl-canvas').style.display='none';return;}
+  const canvas=document.getElementById('webgl-canvas');if(!canvas)return;
+  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false});if(!gl){canvas.style.display='none';return;}
+  const r=()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;gl.viewport(0,0,canvas.width,canvas.height);};
+  r();window.addEventListener('resize',r,{passive:true});
+  const vs=`attribute vec3 aPos;attribute float aSz;attribute vec3 aCol;attribute float aAlpha;uniform mat4 uProj;uniform mat4 uView;uniform float uScroll;uniform float uTime;varying vec3 vCol;varying float vAlpha;void main(){vec3 p=aPos;p.x+=sin(uTime*.5+aPos.z*2.)*.06;p.z+=cos(uTime*.4+aPos.x*1.5)*.04;p.y-=uScroll*.0018*(1.+abs(aPos.z)*.5);p.y=mod(p.y+8.,16.)-8.;gl_Position=uProj*uView*vec4(p,1.);float pulse=1.+.25*sin(uTime*2.+aPos.x*3.);gl_PointSize=aSz*pulse*(1.8/gl_Position.w);vCol=aCol;vAlpha=aAlpha;}`;
+  const fs=`precision mediump float;varying vec3 vCol;varying float vAlpha;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(.5,1.,d))*vAlpha;float g=(1.-smoothstep(0.,.5,d))*.4;gl_FragColor=vec4(vCol+g,a);}`;
+  function cs(t,s){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;}
+  const p=gl.createProgram();gl.attachShader(p,cs(gl.VERTEX_SHADER,vs));gl.attachShader(p,cs(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);gl.useProgram(p);
+  const N=260,pos=new Float32Array(N*3),sz=new Float32Array(N),col=new Float32Array(N*3),alp=new Float32Array(N);
+  const pal=[[.388,.40,.945],[.506,.549,.973],[0,.831,1],[.961,.62,.043],[.063,.725,.506],[.62,.28,.98]];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*20;pos[i*3+1]=(Math.random()-.5)*16;pos[i*3+2]=(Math.random()-.5)*12;sz[i]=3+Math.random()*16;const c=pal[Math.floor(Math.random()*pal.length)];col[i*3]=c[0];col[i*3+1]=c[1];col[i*3+2]=c[2];alp[i]=.12+Math.random()*.45;}
+  function mb(d,l,s){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,d,gl.DYNAMIC_DRAW);const loc=gl.getAttribLocation(p,l);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,s,gl.FLOAT,false,0,0);return b;}
+  const pb=mb(pos,'aPos',3);mb(sz,'aSz',1);mb(col,'aCol',3);mb(alp,'aAlpha',1);
+  const uP=gl.getUniformLocation(p,'uProj'),uV=gl.getUniformLocation(p,'uView'),uS=gl.getUniformLocation(p,'uScroll'),uT=gl.getUniformLocation(p,'uTime');
+  function persp(fov,asp,n,f){const q=1/Math.tan(fov/2);return[q/asp,0,0,0,0,q,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0];}
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
+  let t2=0,sy=0;
+  window.addEventListener('scroll',()=>{sy=window.scrollY;},{passive:true});
+  (function frame(){t2+=.004;gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);for(let i=0;i<N;i++){pos[i*3+1]+=.0004+Math.abs(pos[i*3+2])*.00015;if(pos[i*3+1]>8)pos[i*3+1]=-8;}gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferSubData(gl.ARRAY_BUFFER,0,pos);const W=canvas.width,H=canvas.height;gl.uniformMatrix4fv(uP,false,persp(.75,W/H,.1,100));const cx=Math.sin(t2*.12)*.5,cz=Math.cos(t2*.08)*.3;gl.uniformMatrix4fv(uV,false,[1,0,0,0,0,1,0,0,0,0,1,0,-cx,0,-9+cz,1]);gl.uniform1f(uS,sy);gl.uniform1f(uT,t2);gl.drawArrays(gl.POINTS,0,N);requestAnimationFrame(frame);})();
+}
+
+/* ━━━━ COUNTER ANIMATION ━━━━ */
+function animateCount(el,target,duration=2200){
+  const start=performance.now();
+  const tick=now=>{
+    const p=Math.min((now-start)/duration,1);
+    const ease=1-Math.pow(1-p,4);
+    const v=Math.floor(ease*target);
+    el.textContent=v>=1000?v.toLocaleString():v;
+    if(p<1)requestAnimationFrame(tick);else el.textContent=target.toLocaleString();
+  };
+  requestAnimationFrame(tick);
+}
+
+/* ━━━━ SCROLL REVEAL ━━━━ */
+function initScrollReveal(){
+  const els=document.querySelectorAll('.rv');
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting)e.target.classList.add('visible');
+      else{const r=e.target.getBoundingClientRect();if(r.bottom>=0)e.target.classList.remove('visible');}
+    });
+  },{threshold:.13,rootMargin:'0px 0px -50px 0px'});
+  els.forEach(el=>obs.observe(el));
+}
+
+/* ━━━━ GLOBAL COUNTER OBSERVER ━━━━ */
+function initCounters(){
+  const allCountEls = document.querySelectorAll('[data-count]');
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting && !e.target.dataset.animated){
+        e.target.dataset.animated = '1';
+        animateCount(e.target, parseInt(e.target.dataset.count));
+      }
+    });
+  },{threshold:.5});
+  allCountEls.forEach(el=>obs.observe(el));
+}
+
+/* FIX: Native smooth scroll — no custom interception, uses GPU-accelerated browser scrolling */
+function scrollToSection(id){
+  const el=document.getElementById(id);if(!el)return;
+  const h=document.getElementById('nav')?.offsetHeight||80;
+  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-h,behavior:'smooth'});
+}
+
+/* ━━━━ SECTION MATRIX (per-section colored overlay) ━━━━ */
+function SectionMatrix({color='#6366f1', opacity=0.06, density=0.6}){
+  const canvasRef = useRef(null);
+  useEffect(()=>{
+    const canvas = canvasRef.current; if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const FS = 11;
+    const CHARS = 'アイウカサタナハマヤラワ01{}[]<>/\\@#$ABCDEFGHIJKLMNOP';
+    let W,H,cols,drops,raf;
+    const isMobile = window.innerWidth <= 768;
+    function resize(){
+      const p = canvas.parentElement;
+      W=canvas.width=p.offsetWidth; H=canvas.height=p.offsetHeight;
+      /* FIX: Reduce column density on mobile to cut canvas CPU cost */
+      cols=Math.floor(W/FS*(isMobile ? 0.2 : density));
+      drops=new Array(cols).fill(Math.random()*-50);
+    }
+    resize();
+    const ro = new ResizeObserver(resize); ro.observe(canvas.parentElement);
+    /* FIX: Use setInterval at ~10fps instead of rAF — background matrix
+       doesn't need 60fps; this frees the main thread for smooth scrolling */
+    function draw(){
+      ctx.fillStyle=`rgba(2,2,10,0.07)`;ctx.fillRect(0,0,W,H);
+      ctx.font=`${FS}px "DM Mono",monospace`;
+      for(let i=0;i<cols;i++){
+        const char=CHARS[Math.floor(Math.random()*CHARS.length)];
+        const x=i*(W/cols); const y=drops[i]*FS;
+        ctx.fillStyle=color+'bb'; ctx.fillText(char,x,y);
+        if(y>H&&Math.random()>.97) drops[i]=0;
+        drops[i]+=0.4+Math.random()*0.3;
+      }
+    }
+    raf=setInterval(draw, 100);
+    return()=>{clearInterval(raf);ro.disconnect();};
+  },[]);
+  return(
+    <div className="sec-matrix" style={{opacity}}>
+      <canvas ref={canvasRef} style={{width:'100%',height:'100%'}}/>
+    </div>
+  );
+}
+
+/* ━━━━ ORBIT CANVAS (Hero) ━━━━ */
+function OrbitCanvas(){
+  const canvasRef=useRef(null);
+  useEffect(()=>{
+    const canvas=canvasRef.current;if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    let raf,t=0;
+    /* Real Salesforce logo rendered via SVG → Image → canvas drawImage */
+    /* Use the exact same Salesforce logo SVG as the certifications section */
+    const sfImg = new Image();
+    let sfImgReady = false;
+    sfImg.crossOrigin = 'anonymous';
+    sfImg.onload = () => { sfImgReady = true; };
+    sfImg.onerror = () => {
+      /* Fallback: load via a proxy img element rendered off-screen */
+      sfImgReady = false;
+    };
+    sfImg.src = 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg';
+
+    function drawSFCloud(ctx, cx, cy, scale){
+      if(sfImgReady){
+        /* The Salesforce.com_logo.svg is landscape ~400x280, logo fills it */
+        const w = 96 * scale, h = 68 * scale;
+        ctx.save();
+        /* Soft blue glow ring behind logo */
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 52);
+        glow.addColorStop(0, 'rgba(0,161,224,0.18)');
+        glow.addColorStop(1, 'rgba(0,161,224,0)');
+        ctx.beginPath(); ctx.arc(cx, cy, 52, 0, Math.PI*2);
+        ctx.fillStyle = glow; ctx.fill();
+        ctx.drawImage(sfImg, cx - w/2, cy - h/2, w, h);
+        ctx.restore();
+      } else {
+        /* While image loads: simple blue SF text placeholder */
+        ctx.save();
+        ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#00A1E0';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('Salesforce', cx, cy);
+        ctx.restore();
+      }
+    }
+    const resize=()=>{const r=canvas.parentElement.getBoundingClientRect();canvas.width=r.width;canvas.height=r.height;};
+    resize();
+    const orbits=[
+      {radius:130,speed:.8,color:'#6366f1',items:[{icon:'⚡',label:'Apex',angle:0},{icon:'🎨',label:'LWC',angle:Math.PI}]},
+      {radius:190,speed:-.5,color:'#00d4ff',items:[{icon:'🔗',label:'API',angle:Math.PI/3},{icon:'🔐',label:'Security',angle:Math.PI/3+Math.PI},{icon:'📊',label:'SOQL',angle:Math.PI/3*4}]},
+      {radius:248,speed:.35,color:'#f59e0b',items:[{icon:'🧩',label:'Flows',angle:Math.PI/4},{icon:'🤖',label:'Einstein',angle:Math.PI/4+Math.PI},{icon:'☁️',label:'Cloud',angle:Math.PI*1.5},{icon:'📋',label:'CRM',angle:Math.PI*.7}]},
+    ];
+    function drawCore(cx,cy,t){
+      for(let i=3;i>=1;i--){
+        const pulse = 56+i*14+Math.sin(t+i)*4;
+        ctx.beginPath();ctx.arc(cx,cy,pulse,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(0,161,224,${0.06*i})`;ctx.lineWidth=1;ctx.stroke();
+      }
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,56);
+      g.addColorStop(0,'rgba(0,30,60,0.97)');
+      g.addColorStop(0.6,'rgba(0,20,50,0.95)');
+      g.addColorStop(1,'rgba(2,2,20,0.92)');
+      ctx.beginPath();ctx.arc(cx,cy,56,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      drawSFCloud(ctx, cx, cy-4, 1);
+      ctx.beginPath();ctx.arc(cx,cy,56,0,Math.PI*2);
+      ctx.strokeStyle='rgba(0,161,224,0.55)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+    function drawRing(cx,cy,r,color){
+      ctx.beginPath();ctx.strokeStyle=color+'40';ctx.lineWidth=1;
+      ctx.setLineDash([4,9]);ctx.globalAlpha=.4;
+      ctx.ellipse(cx,cy,r,r*.38,0,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);ctx.globalAlpha=1;
+    }
+    function drawItem(cx,cy,orb,item,t){
+      const a=item.angle+orb.speed*t;
+      const x=cx+Math.cos(a)*orb.radius;
+      const y=cy+Math.sin(a)*orb.radius*.38;
+      const gd=ctx.createRadialGradient(x,y,0,x,y,28);
+      gd.addColorStop(0,orb.color+'44');gd.addColorStop(1,'transparent');
+      ctx.beginPath();ctx.arc(x,y,28,0,Math.PI*2);ctx.fillStyle=gd;ctx.fill();
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-24,y-24,48,48,10);else{ctx.rect(x-24,y-24,48,48);}
+      ctx.fillStyle='rgba(8,8,32,0.92)';ctx.fill();
+      ctx.strokeStyle=orb.color+'66';ctx.lineWidth=1.2;ctx.stroke();
+      ctx.font='1.35rem serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(item.icon,x,y-3);
+      ctx.font=`500 .5rem "DM Mono",monospace`;ctx.fillStyle=orb.color;ctx.fillText(item.label,x,y+15);
+    }
+    function drawParticles(cx,cy,t){
+      for(let i=0;i<18;i++){
+        const a=(i/18)*Math.PI*2+t*.3;const r=70+Math.sin(t*2+i)*8;
+        const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r*.38;
+        ctx.beginPath();ctx.arc(px,py,1.5,0,Math.PI*2);
+        ctx.fillStyle=`rgba(99,102,241,${.3+Math.sin(t*3+i)*.2})`;ctx.fill();
+      }
+    }
+    function render(){
+      t+=.005;ctx.clearRect(0,0,canvas.width,canvas.height);
+      const cx=canvas.width/2,cy=canvas.height/2+10;
+      orbits.forEach(o=>drawRing(cx,cy,o.radius,o.color));
+      orbits.forEach(o=>o.items.forEach(item=>{
+        const a=item.angle+o.speed*t;
+        const x=cx+Math.cos(a)*o.radius,y=cy+Math.sin(a)*o.radius*.38;
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);
+        ctx.strokeStyle=o.color+'18';ctx.lineWidth=.8;ctx.stroke();
+      }));
+      drawParticles(cx,cy,t);drawCore(cx,cy,t);
+      orbits.forEach(o=>o.items.forEach(item=>drawItem(cx,cy,o,item,t)));
+      const pts=['149K pts','201 badges','22 SBs','Ranger'];
+      pts.forEach((pt,i)=>{
+        const a=(i/pts.length)*Math.PI*2+t*.1+Math.PI/4;
+        const r=288+Math.sin(t+i*1.5)*6;
+        const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r*.38;
+        ctx.font=`500 .6rem "DM Mono",monospace`;ctx.textAlign='center';
+        ctx.fillStyle=`rgba(130,140,255,${.4+Math.sin(t*2+i)*.15})`;ctx.fillText(pt,px,py);
+      });
+      raf=requestAnimationFrame(render);
+    }
+    render();
+    const ro=new ResizeObserver(resize);ro.observe(canvas.parentElement);
+    return()=>{cancelAnimationFrame(raf);ro.disconnect();};
+  },[]);
+  return<canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>;
+}
+
+/* ━━━━ NAV ━━━━ */
+const NAV_ITEMS=['hero','about','projects','work','certifications','trailhead','contact'];
+function Nav(){
+  const[stuck,setStuck]=useState(false);const[active,setActive]=useState('hero');const[open,setOpen]=useState(false);
+  useEffect(()=>{
+    const fn=()=>{const y=window.scrollY;setStuck(y>60);let c='hero';NAV_ITEMS.forEach(id=>{const el=document.getElementById(id);if(el&&y>=el.offsetTop-200)c=id;});setActive(c);};
+    window.addEventListener('scroll',fn,{passive:true});return()=>window.removeEventListener('scroll',fn);
+  },[]);
+  const go=id=>{scrollToSection(id);setOpen(false);document.body.style.overflow='';};
+  const tog=()=>{const n=!open;setOpen(n);document.body.style.overflow=n?'hidden':'';};
+  return(<>
+    <nav id="nav" className={stuck?'stuck':''}>
+      <div className="nav-logo" onClick={()=>go('hero')}><div className="nav-logo-box">SF</div>eswarmagi.dev</div>
+      <ul className="nav-links">{NAV_ITEMS.map(id=><li key={id}><a className={active===id?'active':''} onClick={()=>go(id)}>{id[0].toUpperCase()+id.slice(1)}</a></li>)}</ul>
+      <a className="nav-hire" onClick={()=>go('contact')}>Hire Me</a>
+      <button className={`ham${open?' open':''}`} onClick={tog} aria-label="Menu"><span/><span/><span/></button>
+    </nav>
+    <div id="mob-menu" className={open?'open':''}>
+      {NAV_ITEMS.map((id,i)=><a key={id} className={`mob-link${active===id?' active':''}`} onClick={()=>go(id)} style={{transitionDelay:open?`${i*38}ms`:'0ms'}}>{id[0].toUpperCase()+id.slice(1)}</a>)}
+      <button className="mob-hire" onClick={()=>go('contact')}>Hire Me →</button>
+    </div>
+  </>);
+}
+
+/* ━━━━ HERO ━━━━ */
+function Hero(){
+  return(
+    <section id="hero">
+      <SectionMatrix color="#6366f1" opacity={0.09} density={0.7}/>
+      <div className="hero-grid-bg"/><div className="hero-orb1"/><div className="hero-orb2"/>
+      <div className="hero-inner">
+        <div className="hero-text">
+          <div className="rv from-up"><div className="avail-chip"><div className="avail-dot"/>Open to Opportunities · Chennai / Onsite</div></div>
+          <div className="rv from-up" data-delay="1">
+            <h1 className="hero-name"><span className="hero-name-plain">Eswar</span><span className="hero-name-grad">Magi</span></h1>
+          </div>
+          <div className="rv from-up" data-delay="2">
+            <p className="hero-role">Salesforce Developer &amp; Building Scalable CRM Solutions</p>
+            <p className="hero-desc">I build <strong>enterprise-grade Salesforce solutions</strong> — complex Apex logic, real-time LWC dashboards, and seamless API integrations. Certified Platform Developer I. Community-active Trailblazer.</p>
+          </div>
+          <div className="rv from-up" data-delay="3">
+            <div className="hero-btns">
+              <a className="btn-primary" onClick={()=>scrollToSection('projects')}><span>View Projects</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a>
+              <a className="btn-ghost" onClick={()=>scrollToSection('contact')}>Let's Talk</a>
+            </div>
+            <div className="hero-metrics">
+              {[['2+','Years Building'],['2','Live Projects'],['201','Badges'],['2','Certs']].map(([v,l])=>(
+                <div className="met-item" key={l}><div className="met-v">{v}</div><div className="met-l">{l}</div></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="hero-orbit-wrap rv from-right" data-delay="2"><OrbitCanvas/></div>
+      </div>
+      <div className="scroll-arrow" onClick={()=>scrollToSection('about')}><div className="scroll-line"/><span className="scroll-lbl">Scroll</span></div>
+    </section>
+  );
+}
+
+/* ━━━━ MARQUEE ━━━━ */
+const MQ=['⚡ Apex Development','🎨 Lightning Web Components','🔗 REST / SOAP APIs','☁️ Salesforce Platform','📊 SOQL & SOSL','🤖 Einstein AI','🧩 Flow Builder','🔐 Security','📱 Mobile-First UX','🗄️ Data Architecture'];
+function Marquee(){
+  const d=[...MQ,...MQ];
+  return(<div className="mq-wrap"><div className="mq-track">{d.map((item,i)=><span className="mq-item" key={i}>{item}<span className="mq-dot"> ◆</span></span>)}</div></div>);
+}
+
+/* ━━━━ ABOUT ━━━━ */
+function About(){
+  return(
+    <section id="about" className="sec-bg-dark">
+      <SectionMatrix color="#00d4ff" opacity={0.055} density={0.5}/>
+      <div className="con">
+        <div className="about-grid">
+          <div>
+            <div className="rv from-left">
+              <span className="eyebrow">// About Me</span>
+              <h2 className="sec-title">Crafting the Future<br/>of Cloud Software</h2>
+              <div className="about-text" style={{marginTop:'1.6rem'}}>
+                <p>I'm <strong>Eswar</strong>, a dedicated Salesforce Developer based in India, passionate about building scalable, high-impact solutions on the Salesforce platform. I specialize in <strong>Apex, Lightning Web Components, and API integrations</strong> that transform how businesses operate.</p>
+                <p>With <strong>Double Star Ranger</strong> on Trailhead, 201+ badges, and a Platform Developer I certification earned in February 2026, I combine deep technical knowledge with hands-on delivery.</p>
+                <p>I'm continuously exploring the frontier: <strong>Einstein AI, Agentforce, and Data Cloud</strong> — the technologies shaping Salesforce's next decade.</p>
+              </div>
+            </div>
+            <div className="rv from-left" data-delay="1">
+              <div className="stats-row">
+                <div className="stat-cell"><span className="stat-n" data-count="149200">0</span><span className="stat-l">Trail Points</span></div>
+                <div className="stat-cell"><span className="stat-n" data-count="201">0</span><span className="stat-l">Badges</span></div>
+                <div className="stat-cell"><span className="stat-n" data-count="22">0</span><span className="stat-l">Superbadges</span></div>
+              </div>
+            </div>
+          </div>
+          <div className="rv from-right" data-delay="1">
+            <div className="skill-stack">
+              <h3>Technology Arsenal</h3>
+              {[['Salesforce Core',['⚡ Apex','🎨 LWC','🧩 Aura','🔄 Flows','⚙️ Triggers','🗄️ SOQL/SOSL','🤖 Einstein AI','📋 Process Builder']],
+                ['Integration & APIs',['🔗 REST APIs','📡 SOAP APIs','📨 Platform Events','🌐 Named Credentials','🔐 OAuth 2.0']],
+                ['Web & Dev Tools',['🟨 JavaScript','🌐 HTML/CSS','📊 Chart.js','🐙 GitHub','🛠️ SFDX CLI','🔨 VS Code']],
+                ['Salesforce Clouds',['💼 Sales Cloud','🎯 Service Cloud','🌐 Experience Cloud','📈 Marketing Cloud']],
+              ].map(([lbl,pills])=>(
+                <div className="skill-group" key={lbl}>
+                  <span className="skill-lbl">{lbl}</span>
+                  <div className="pills">{pills.map(p=><span className="pill" key={p}>{p}</span>)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ PROJECTS ━━━━ */
+const PROJECTS=[
+  {num:'01/03',emoji:'📋',title:'Salesforce Lead Management System (SLM)',desc:'End-to-end lead lifecycle automation — Web-to-Lead capture, Apex triggers for automatic status updates & Opportunity creation, real-time email alerts, and interactive analytics dashboards. Reduced manual processing time by 70% in simulation.',tags:['LWC','Apex Triggers','Flows','Web-to-Lead','Dashboards','Email Alerts'],link:'https://www.linkedin.com/posts/eswar-magi-87b493278_salesforce-leadmanagement-apextriggers-activity-7304632296630849536-ibxT',linkText:'LinkedIn',badges:['live','feat'],year:'2025'},
+  {num:'02/03',emoji:'💼',title:'Employee Expense Tracker (EET)',desc:'Full-cycle expense management with multi-level approval flows, Chart.js visual analytics, and automated email notifications — all in a polished LWC interface.',tags:['LWC','Apex','SOQL','Approval Process','Chart.js'],link:'https://www.linkedin.com/posts/eswar-magi-87b493278_salesforce-lwc-apex-activity-7344432616042917889-27xB',linkText:'LinkedIn',badges:['live'],year:'2025'},
+  {num:'03/03',emoji:'🗓️',title:'Leave Management System (LMS)',desc:'Real-time leave platform with dynamic SOQL, custom objects, employee submission, manager approval flows, and live balance dashboards.',tags:['LWC','Apex','Custom Objects','SOQL','Approval Flow'],link:'https://github.com/eswarmagiii',linkText:'GitHub',badges:['gh'],year:'2025'},
+];
+function Projects(){
+  return(
+    <section id="projects" className="sec-bg-mid">
+      <SectionMatrix color="#818cf8" opacity={0.06} density={0.45}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center',marginBottom:'1rem'}}>
+          <span className="eyebrow">// What I've Built</span>
+          <h2 className="sec-title">Salesforce Projects</h2>
+          <p className="sec-sub" style={{margin:'0 auto'}}>Real enterprise-grade solutions — Apex, LWC, Flows, and integrations. Deployed and battle-tested.</p>
+        </div>
+        <div className="proj-grid">
+          {PROJECTS.map((p,i)=>(
+            <div key={p.num} className="rv from-up" data-delay={i+1}>
+              <div className="proj-card" style={{height:'100%'}}>
+                <div className="proj-thumb">
+                  <span className="proj-emoji">{p.emoji}</span>
+                  <div className="proj-overlay"/>
+                  <div className="proj-badges">
+                    {p.badges.includes('live')&&<span className="badge badge-live">✦ Live</span>}
+                    {p.badges.includes('feat')&&<span className="badge badge-feat">Featured</span>}
+                    {p.badges.includes('gh')&&<span className="badge badge-gh">GitHub</span>}
+                  </div>
+                </div>
+                <div className="proj-body">
+                  <div className="proj-num">{p.num}</div>
+                  <h3 className="proj-title">{p.title}</h3>
+                  <p className="proj-desc">{p.desc}</p>
+                  <div className="proj-tags">{p.tags.map(t=><span className="proj-tag" key={t}>{t}</span>)}</div>
+                  <div className="proj-footer">
+                    <a href={p.link} target="_blank" rel="noopener" className="proj-link">View on {p.linkText} <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M7 17L17 7M7 7h10v10"/></svg></a>
+                    <span className="proj-year">{p.year}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ WORK ━━━━ */
+function Work(){
+  return(
+    <section id="work" className="sec-bg-dark">
+      <SectionMatrix color="#f59e0b" opacity={0.05} density={0.4}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center'}}><span className="eyebrow">// Career Journey</span><h2 className="sec-title">Professional Experience</h2></div>
+        <div className="rv from-up" data-delay="1">
+          <div className="work-intro">
+            <div className="trans-chip">🔄 Career Transition · Non-IT → Salesforce Developer</div>
+            <p>Before writing my first line of Apex, I spent years <strong style={{color:'#fff'}}>working inside Salesforce as a power user</strong> — managing leads, running CRM workflows, and driving sales operations. That business context is what makes me different: I don't just build Salesforce solutions, I understand the <strong style={{color:'#fff'}}>real-world problems</strong> they need to solve.</p>
+          </div>
+        </div>
+        <div className="work-grid">
+          {[
+            {role:'Senior Sales Executive',period:'Oct 2025 – Feb 2026',company:'Casagrand – FittedHomes · Real Estate',tags:['Salesforce CRM','Sales Cloud','Pipeline Mgmt'],biz:['Sales Operations'],points:['Salesforce Sales Cloud Operations: Actively managed lead, account, contact, and opportunity records — understanding exactly what developers need to build for sales teams.','CRM Data & Reporting: Maintained pipeline hygiene, updated deal stages, and used Salesforce dashboards to track conversion ratios.','Process Automation Exposure: Worked with Salesforce Flows, Approvals, and standard automations — giving me a user-first view of what I now build as a developer.','Cross-team Collaboration: Used Salesforce records to align sales, design, and execution teams.'],featured:true},
+            {role:'Business Development Executive',period:'Jun 2023 – Sep 2024',company:'Datanetiix Solutions Inc. · Technology / IT Services',tags:['Salesforce CRM','Microsoft Dynamics'],biz:['B2B / B2C Sales','Market Research'],points:['CRM-driven Lead Generation: Used Salesforce and Microsoft Dynamics GP to manage cold leads, track nurturing stages, and convert prospects to active clients.','Sales Reporting & Analytics: Built and monitored KPIs using CRM dashboards — the same dashboards I now build with LWC and SOQL.','Market Research: Identified B2B and B2C target industries; insights shaped outreach strategy.','IT Solutions Context: Selling technology services gave me early exposure to Salesforce partner ecosystems and enterprise software.'],featured:false},
+          ].map((w,i)=>(
+            <div key={w.role} className="rv from-up" data-delay={i+2}>
+              <div className={`work-card${w.featured?' featured':''}`}>
+                <div className="work-head">
+                  <div className="work-role-row"><span className="work-role">{w.role}</span><span className="work-period">{w.period}</span></div>
+                  <p className="work-company">{w.company}</p>
+                  <div className="work-tags">{w.tags.map(t=><span className="wtag" key={t}>{t}</span>)}{w.biz.map(t=><span className="wtag biz" key={t}>{t}</span>)}</div>
+                </div>
+                <div className="work-body">
+                  <ul className="work-points">{w.points.map((pt,j)=>{const[bold,...rest]=pt.split(':');return<li key={j}><strong>{bold}:</strong>{rest.join(':')}</li>;})}</ul>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ TIMELINE ━━━━ */
+const TL=[
+  {date:'Feb 2026',badge:'Milestone',title:'Salesforce Platform Developer I Certified',company:'Trailhead Academy · Credential ID: 7433644',desc:'Earned the industry-recognized Salesforce Platform Developer I certification, validating expertise in Apex, LWC, SOQL, platform security, governor limits, and developer tooling.',skills:['Apex','LWC','SOQL','Security','Governor Limits']},
+  {date:'2025 – Present',badge:'Active',title:'Building Production Salesforce Applications',company:'Independent Developer · India',desc:'Developed 3 production-grade Salesforce applications — Lead Management, Expense Tracking, and Leave Management — each showcasing end-to-end Apex, LWC, Flow, and integration capabilities.',skills:['Apex Triggers','LWC','Flow Builder','REST APIs','Approval Processes']},
+  {date:'Oct 2024',badge:'Certified',title:'Salesforce Associate AI Certified',company:'Trailhead Academy · Credential ID: 5007402',desc:'Certified in Salesforce AI capabilities — validated knowledge of Einstein AI, predictive analytics, and the Salesforce AI ecosystem.',skills:['Einstein AI','Predictive Analytics','AI Ethics']},
+  {date:'2024',badge:'Foundation',title:'Started Salesforce Development Journey',company:'Trailhead · Self-Driven Learning',desc:'Began deep-diving into the Salesforce ecosystem via Trailhead, rapidly achieving Ranger rank with 149,200+ points, 201 badges, and 22 superbadges.',skills:['Trailhead','Admin Fundamentals','Apex Basics','LWC Basics']},
+];
+function Timeline(){
+  return(
+    <section id="experience" className="sec-bg-mid">
+      <SectionMatrix color="#10b981" opacity={0.05} density={0.4}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center',marginBottom:'1rem'}}><span className="eyebrow">// My Journey</span><h2 className="sec-title">Timeline</h2></div>
+        <div className="tl-wrap">
+          {TL.map((t,i)=>(
+            <div key={t.title} className="tl-item rv from-left" data-delay={i%3+1}>
+              <div className="tl-dot"/>
+              <div className="tl-meta"><span className="tl-date">{t.date}</span><span className="tl-badge">{t.badge}</span></div>
+              <h3 className="tl-title">{t.title}</h3>
+              <p className="tl-company">{t.company}</p>
+              <p className="tl-desc">{t.desc}</p>
+              <div className="tl-skills">{t.skills.map(s=><span className="tl-skill" key={s}>{s}</span>)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ CERTIFICATIONS ━━━━ */
+const CERTS=[
+  {icoImg:'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg',name:'Platform Developer I',org:'Salesforce / Trailhead Academy',meta:'Issued: February 2026\nStatus: Active · Valid',id:'Credential ID: 7433644',sc:'cs-active',sl:'✓'},
+  {icoImg:'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg',name:'Associate AI',org:'Salesforce / Trailhead Academy',meta:'Issued: October 2024\nStatus: Active · Certified',id:'Credential ID: 5007402',sc:'cs-active',sl:'✓'},
+  {ico:'💡',name:'JavaScript Developer I',org:'Salesforce / Trailhead Academy',meta:'Status: In Progress\nTarget: Q2 2026',id:'Preparing for exam',sc:'cs-pending',sl:'⏳'},
+  {ico:'🔧',name:'Administrator',org:'Salesforce / Trailhead Academy',meta:'Status: In Progress\nTarget: Q3 2026',id:'Completing prep modules',sc:'cs-pending',sl:'⏳'},
+];
+function Certifications(){
+  return(
+    <section id="certifications" className="sec-bg-dark">
+      <SectionMatrix color="#c084fc" opacity={0.055} density={0.45}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center',marginBottom:'1rem'}}>
+          <span className="eyebrow">// My Credentials</span>
+          <h2 className="sec-title">Certifications</h2>
+          <p className="sec-sub" style={{margin:'0 auto'}}>Salesforce-validated expertise — earned through rigorous study, real-world practice, and deep platform knowledge.</p>
+        </div>
+        <div className="cert-grid">
+          {CERTS.map((c,i)=>(
+            <div key={c.name} className="rv from-scale" data-delay={i+1}>
+              <div className="cert-card">
+                <div className={`cert-status ${c.sc}`}>{c.sl}</div>
+                <div className="cert-ico">{c.icoImg?<img src={c.icoImg} alt={c.name} onError={e=>{e.target.style.display='none';}}/>:c.ico}</div>
+                <div><p className="cert-name">{c.name}</p><p className="cert-org">{c.org}</p></div>
+                <p className="cert-meta">{c.meta}</p>
+                <p className="cert-id">{c.id}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ TRAILHEAD ━━━━ */
+const SKILLS=[{name:'Apex Development',pct:90,color:'#6366f1'},{name:'Lightning Web Components',pct:85,color:'#00d4ff'},{name:'SOQL / SOSL',pct:88,color:'#818cf8'},{name:'Flow & Process Automation',pct:82,color:'#f59e0b'},{name:'REST / SOAP Integration',pct:78,color:'#10b981'},{name:'Security & Data Model',pct:80,color:'#f43f5e'},{name:'Einstein AI / Analytics',pct:70,color:'#c084fc'}];
+const RANKS=[{icon:'🦅',name:'Ranger',req:'50,000',type:'done'},{icon:'🌟',name:'Double Star Ranger',req:'100,000',type:'done'},{icon:'💫',name:'Triple Star Ranger',req:'150,000',type:'current'},{icon:'🏕️',name:'Scout',req:'500',type:'past'},{icon:'🧭',name:'Explorer',req:'5,000',type:'past'},{icon:'🥾',name:'Hiker',req:'25,000',type:'past'}];
+function Trailhead(){
+  const secRef=useRef(null);const[animated,setAnimated]=useState(false);const[barW,setBarW]=useState({});
+  useEffect(()=>{
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting&&!animated){
+        setAnimated(true);
+        ['th-p','th-b','th-t','th-s'].forEach((id,i)=>{const el=document.getElementById(id);if(el)animateCount(el,[149200,201,29,22][i],[3000,2000,1500,1500][i]);});
+        setTimeout(()=>{const w={};SKILLS.forEach(s=>{w[s.name]=s.pct;});setBarW(w);document.querySelectorAll('.rank-bar').forEach(b=>{b.style.width=b.dataset.target;});},300);
+        obs.disconnect();
+      }
+    },{threshold:.15});
+    if(secRef.current)obs.observe(secRef.current);return()=>obs.disconnect();
+  },[animated]);
+  return(
+    <section id="trailhead" className="sec-bg-mid" ref={secRef}>
+      <SectionMatrix color="#00d4ff" opacity={0.06} density={0.5}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center',marginBottom:'1rem'}}>
+          <span className="eyebrow">// Trailhead · Salesforce Community</span>
+          <h2 className="sec-title">Trailblazer Profile</h2>
+          <p className="sec-sub" style={{margin:'0 auto'}}>149,200+ points. 201 badges. 22 superbadges. The full picture of my Salesforce journey.</p>
+        </div>
+        <div className="th-top">
+          <div className="rv from-left">
+            <div className="th-panel">
+              <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at top right,rgba(99,102,241,0.1),transparent 60%)',pointerEvents:'none'}}/>
+              <div style={{display:'flex',alignItems:'center',gap:'1.1rem',marginBottom:'1.8rem'}}>
+                <div style={{position:'relative',flexShrink:0}}>
+                  <div style={{width:76,height:76,borderRadius:'50%',background:'linear-gradient(135deg,#6366f1,#00d4ff)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'2.2rem',border:'3px solid rgba(99,102,241,0.4)',boxShadow:'0 0 28px rgba(99,102,241,0.3)'}}>🏔️</div>
+                  <div style={{position:'absolute',bottom:2,right:2,width:16,height:16,background:'#10b981',borderRadius:'50%',border:'2px solid var(--card)',boxShadow:'0 0 6px rgba(16,185,129,0.8)'}}/>
+                </div>
+                <div><p style={{fontFamily:'var(--f-display)',fontSize:'1.25rem',fontWeight:900,marginBottom:'.2rem'}}>Eswar Magi</p><p style={{fontFamily:'var(--f-mono)',fontSize:'.68rem',color:'var(--amber)',letterSpacing:'.1em',textTransform:'uppercase'}}>Salesforce Trailblazer</p></div>
+              </div>
+              <div style={{background:'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,212,255,0.06))',border:'1px solid rgba(99,102,241,0.25)',borderRadius:14,padding:'1rem',marginBottom:'1.3rem',textAlign:'center'}}>
+                <div style={{fontSize:'2.5rem',marginBottom:'.3rem',filter:'drop-shadow(0 0 12px rgba(99,102,241,0.8))'}}>🦅</div>
+                <p style={{fontFamily:'var(--f-display)',fontSize:'1.4rem',fontWeight:900,background:'linear-gradient(135deg,#818cf8,#00d4ff)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>RANGER</p>
+                <p style={{fontFamily:'var(--f-mono)',fontSize:'.6rem',color:'var(--muted)',letterSpacing:'.15em',textTransform:'uppercase',marginTop:'.2rem'}}>Highest Trailhead Rank · Achieved</p>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,background:'var(--border)',borderRadius:12,overflow:'hidden',marginBottom:'1.3rem'}}>
+                {[['th-p','Points'],['th-b','Badges'],['th-t','Trails'],['th-s','Superbadges']].map(([id,l])=>(
+                  <div key={l} style={{background:'var(--surface)',padding:'.9rem',textAlign:'center'}}><span id={id} style={{fontFamily:'var(--f-display)',fontSize:'1.5rem',fontWeight:900,display:'block'}}>0</span><span style={{fontFamily:'var(--f-mono)',fontSize:'.58rem',color:'var(--muted)',letterSpacing:'.08em',textTransform:'uppercase'}}>{l}</span></div>
+                ))}
+              </div>
+              <a href="https://www.salesforce.com/trailblazer/eswarmagi" target="_blank" rel="noopener" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.6rem',padding:'.8rem',borderRadius:10,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.2)',color:'var(--primary-light)',fontFamily:'var(--f-mono)',fontSize:'.7rem',fontWeight:500,letterSpacing:'.08em',textTransform:'uppercase',textDecoration:'none',transition:'all .3s'}}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(99,102,241,0.18)';e.currentTarget.style.color='#fff';}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(99,102,241,0.08)';e.currentTarget.style.color='var(--primary-light)';}}>
+                View Trailhead Profile →
+              </a>
+            </div>
+          </div>
+          <div className="rv from-right" data-delay="1">
+            <div className="th-panel" style={{height:'100%'}}>
+              <p style={{fontFamily:'var(--f-display)',fontSize:'1.05rem',fontWeight:700,marginBottom:'.3rem'}}>Rank Progression</p>
+              <p style={{fontFamily:'var(--f-mono)',fontSize:'.65rem',color:'var(--muted)',marginBottom:'1.6rem'}}>Full journey to Ranger — the highest achievable rank.</p>
+              {RANKS.map(r=>(
+                <div className={`rank-item rank-${r.type}`} key={r.name}>
+                  <div className="rank-icon">{r.icon}</div>
+                  <div className="rank-info">
+                    <div className="rank-top"><span className="rank-name">{r.name}</span><div style={{display:'flex',alignItems:'center',gap:'.5rem'}}><span className={`rank-tag ${r.type==='current'?'rtag-cur':r.type==='past'?'rtag-past':'rtag-done'}`}>{r.type==='current'?'Active':r.type==='past'?'✓ Done':'✓ Earned'}</span><span className="rank-pts">{r.req} pts</span></div></div>
+                    <div className="rank-bar-bg"><div className="rank-bar" data-target="100%" style={{width:'0%'}}/></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="th-bottom">
+          <div className="rv from-left" data-delay="1">
+            <div className="th-panel">
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1.5rem',flexWrap:'wrap',gap:'.8rem'}}>
+                <div><p style={{fontFamily:'var(--f-display)',fontSize:'1.05rem',fontWeight:700,marginBottom:'.2rem'}}>Superbadge Collection</p><p style={{fontFamily:'var(--f-mono)',fontSize:'.65rem',color:'var(--muted)'}}>22 superbadges earned · Advanced expertise</p></div>
+                <div style={{background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.25)',borderRadius:8,padding:'.35rem .9rem',fontFamily:'var(--f-display)',fontSize:'1.3rem',fontWeight:900,color:'var(--primary-light)'}}>22</div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'.85rem'}}>
+                {[['⚡','Apex Specialist'],['🎨','LWC Specialist'],['🔗','Integration Arch.'],['🎯','Security Specialist'],['🤖','Einstein Analytics'],['☁️','Platform Dev I'],['📊','Reports & Dashboards'],['🔄','Process Automation'],['✨','+14 More']].map(([e,n])=>(
+                  <div className="sb-card" key={n}><span>{e}</span><p>{n}</p></div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="rv from-right" data-delay="2">
+            <div className="th-panel">
+              <p style={{fontFamily:'var(--f-display)',fontSize:'1.05rem',fontWeight:700,marginBottom:'.3rem'}}>Platform Skill Depth</p>
+              <p style={{fontFamily:'var(--f-mono)',fontSize:'.65rem',color:'var(--muted)',marginBottom:'1.6rem'}}>Proficiency across core Salesforce domains</p>
+              <div style={{display:'flex',flexDirection:'column',gap:'1.1rem'}}>
+                {SKILLS.map(s=>(
+                  <div key={s.name}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.32rem'}}>
+                      <span style={{fontFamily:'var(--f-mono)',fontSize:'.68rem',color:'var(--muted)'}}>{s.name}</span>
+                      <span style={{fontFamily:'var(--f-mono)',fontSize:'.65rem',fontWeight:500,color:s.color}}>{s.pct}%</span>
+                    </div>
+                    <div className="sk-bar-wrap"><div className="sk-bar" style={{background:s.color,width:`${barW[s.name]||0}%`}}/></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ CONTACT ━━━━ */
+function Contact(){
+  return(
+    <section id="contact" className="sec-bg-dark">
+      <SectionMatrix color="#f43f5e" opacity={0.05} density={0.38}/>
+      <div className="con">
+        <div className="rv from-up" style={{textAlign:'center',marginBottom:'1rem'}}>
+          <span className="eyebrow">// Say Hello</span>
+          <h2 className="sec-title">Get In Touch</h2>
+          <p className="sec-sub" style={{margin:'0 auto'}}>Have a Salesforce project, job opportunity, or just want to connect? I'd love to hear from you.</p>
+        </div>
+        <div className="contact-grid">
+          <div className="rv from-left">
+            <div className="contact-info">
+              <h3>Let's build something great together.</h3>
+              <p>I'm open to Salesforce Developer roles, freelance projects, and collaboration. Whether it's an Apex challenge, an LWC component, or a full-scale implementation — let's talk.</p>
+              <div className="c-links">
+                {[['@','Email','eswarmag123456@gmail.com','mailto:eswarmagi123456@gmail.com'],['in','LinkedIn','linkedin.com/in/eswar-magi','https://linkedin.com/in/eswar-magi-87b493278'],['gh','GitHub','github.com/eswarmagiii','https://github.com/eswarmagiii'],['ᨒ↟','Trailhead','trailblazer/eswarmagi','https://www.salesforce.com/trailblazer/eswarmagi']].map(([ico,lbl,txt,href])=>(
+                  <a key={lbl} href={href} target="_blank" rel="noopener" className="c-link">
+                    <div className="c-ico">{ico}</div>
+                    <div className="c-text"><small>{lbl}</small><span>{txt}</span></div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="contact-form">
+              <form
+                action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00DQy00000KvN83"
+                method="POST"
+              >
+                <input type="hidden" name="oid" value="00DQy00000KvN83"/>
+                <input type="hidden" name="retURL" value="https://eswarmagiii.github.io/portfolio/thank.jsx"/>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="last_name">Full Name</label>
+                  <input type="text" id="last_name" name="last_name" className="form-input" placeholder="Your full name" required/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="email">Email</label>
+                  <input type="email" id="email" name="email" className="form-input" placeholder="you@company.com" required/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="mobile">Mobile <span style={{color:'var(--muted)',fontWeight:300}}>(Optional)</span></label>
+                  <input type="tel" id="mobile" name="mobile" className="form-input" placeholder="+91 XXXXXXXXXX"/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="description">Message</label>
+                  <textarea id="description" name="description" className="form-textarea" placeholder="Tell me about the opportunity or project..." required/>
+                </div>
+                <button type="submit" className="form-submit">
+                  <span>Send Message</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━ FOOTER ━━━━ */
+function Footer(){
+  const go=id=>scrollToSection(id);
+  const socials=[
+    {href:'https://linkedin.com/in/eswar-magi-87b493278',img:'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg',label:'LinkedIn',c:'#0a66c2'},
+    {href:'https://github.com/eswarmagiii',img:'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg',label:'GitHub',c:'#ffffff'},
+    {href:'https://www.salesforce.com/trailblazer/eswarmagi',img:'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg',label:'Trailhead',c:'#00a1e0'},
+    {href:'mailto:eswarmagiii@gmail.com',img:'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/gmail.svg',label:'Email',c:'#ea4335'},
+  ];
+  return(
+    <footer>
+      <SectionMatrix color="#6366f1" opacity={0.04} density={0.35}/>
+      <div style={{position:'relative',zIndex:2}}>
+        <div className="footer-grid" style={{maxWidth:1200,margin:'0 auto'}}>
+          <div className="footer-brand">
+            <div style={{display:'flex',alignItems:'center',gap:'.6rem',marginBottom:'.8rem'}}>
+              <div className="nav-logo-box">SF</div>
+              <span style={{fontFamily:'var(--f-mono)',fontSize:'.85rem',fontWeight:500,letterSpacing:'.08em'}}>eswarmagi.dev</span>
+            </div>
+            <p>Salesforce Platform Developer I certified professional, building enterprise cloud solutions with Apex, LWC, and modern integration patterns.</p>
+            <div className="footer-socials">
+              {socials.map(s=>(
+                <a key={s.label} href={s.href} target="_blank" rel="noopener" className="fsoc-btn" title={s.label}
+                  onMouseEnter={e=>{const img=e.currentTarget.querySelector('img');if(img)img.style.filter='brightness(1) saturate(1)';e.currentTarget.style.borderColor=s.c+'66';e.currentTarget.style.boxShadow=`0 8px 20px ${s.c}33`;}}
+                  onMouseLeave={e=>{const img=e.currentTarget.querySelector('img');if(img)img.style.filter='brightness(0.5) saturate(0)';e.currentTarget.style.borderColor='';e.currentTarget.style.boxShadow='';}}
+                ><img src={s.img} alt={s.label} style={{width:20,height:20,objectFit:'contain',filter:'brightness(0.5) saturate(0)',transition:'filter .3s'}} onError={e=>{e.target.style.display='none';}}/></a>
+              ))}
+            </div>
+          </div>
+          {[['Navigation',[['hero','Home'],['about','About'],['projects','Projects'],['work','Experience'],['experience','Timeline'],['certifications','Certifications'],['trailhead','Trailhead'],['contact','Contact']]],['Expertise',[['#','Apex Development'],['#','Lightning Web Components'],['#','API Integrations'],['#','Flow Automation'],['#','Data Architecture'],['#','Einstein AI']]],['Credentials',[['certifications','PD1 Certified ✓'],['trailhead','Ranger Rank ✓'],['trailhead','201 Badges ✓'],['trailhead','22 Superbadges ✓'],['certifications','JS Dev I (2026)'],['certifications','Admin (2026)']]]].map(([title,links])=>(
+            <div className="footer-col" key={title}><h4>{title}</h4><ul>{links.map(([id,lbl])=><li key={lbl}><a onClick={()=>go(id)}>{lbl}</a></li>)}</ul></div>
+          ))}
+        </div>
+        <div className="footer-bottom" style={{maxWidth:1200,margin:'0 auto'}}>
+          <p>© 2026 Eswar Magi · Salesforce Developer · All Rights Reserved</p>
+          <p className="footer-mono">Made with <span className="heart">❤️</span> · Apex. LWC. Cloud.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ━━━━ APP ━━━━ */
+function App(){
+  useEffect(()=>{
+    window.addEventListener('scroll',()=>{
+      const pct=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)||0;
+      document.getElementById('scroll-prog').style.width=(pct*100)+'%';
+      document.getElementById('btt')?.classList.toggle('show',window.scrollY>400);
+      document.getElementById('dna-widget')?.classList.toggle('show',window.scrollY>200);
+    },{passive:true});
+  },[]);
+  return(<><Nav/><Hero/><Marquee/><About/><Projects/><Work/><Timeline/><Certifications/><Trailhead/><Contact/><Footer/></>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+<script>
+/* ━━━━ LOADER ━━━━ */
+(function(){
+  let p=0;const pctEl=document.getElementById('ld-pct');
+  const iv=setInterval(()=>{p+=Math.random()*18+4;if(p>=100){p=100;clearInterval(iv);setTimeout(()=>{document.getElementById('loader').classList.add('hide');},420);}pctEl.textContent=Math.floor(p)+'%';},80);
+})();
+
+/* ━━━━ CURSOR ━━━━ */
+(function(){
+  if(window.innerWidth<=768)return;
+  const dot=document.getElementById('cur-dot'),ring=document.getElementById('cur-ring');
+  let mx=0,my=0,ax=0,ay=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+  (function t(){ax+=(mx-ax)*.11;ay+=(my-ay)*.11;ring.style.left=ax+'px';ring.style.top=ay+'px';requestAnimationFrame(t);})();
+  document.addEventListener('mouseover',e=>{if(e.target.matches('a,button,.proj-card,.cert-card,.work-card,.pill,.sb-card,.btn-primary,.btn-ghost,.c-link,.fsoc-btn'))document.body.classList.add('cursor-hover');});
+  document.addEventListener('mouseout',e=>{if(e.target.matches('a,button,.proj-card,.cert-card,.work-card,.pill,.sb-card,.btn-primary,.btn-ghost,.c-link,.fsoc-btn'))document.body.classList.remove('cursor-hover');});
+})();
+
+/* ━━━━ GLOBAL MATRIX ━━━━ */
+(function(){
+  const canvas=document.getElementById('matrix-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const CHARS='アイウエオカキクケコサシスセソタチツテトナニヌネノ01{}[]<>/\\@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const FS=13;let W,H,cols,drops;
+  const PAL=['#6366f1','#818cf8','#00d4ff','#10b981','#f59e0b'];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;cols=Math.floor(W/FS);drops=new Array(cols).fill(1);}
+  resize();window.addEventListener('resize',resize,{passive:true});
+  function draw(){
+    ctx.fillStyle='rgba(2,2,10,0.055)';ctx.fillRect(0,0,W,H);
+    ctx.font=FS+'px "DM Mono",monospace';
+    for(let i=0;i<cols;i++){
+      const ch=CHARS[Math.floor(Math.random()*CHARS.length)];
+      const x=i*FS,y=drops[i]*FS;
+      ctx.fillStyle=PAL[i%PAL.length]+'cc';ctx.fillText(ch,x,y);
+      if(y>H&&Math.random()>.975)drops[i]=0;drops[i]++;
+    }
+  }
+  /* FIX: 80ms interval (~12fps) instead of 42ms (~24fps) — background
+     matrix animation doesn't need high framerate; frees CPU for scroll */
+  setInterval(draw,80);
+})();
+
+/* ━━━━ DNA HELIX (custom side widget) ━━━━ */
+(function(){
+  const canvas=document.getElementById('dna-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');const W=28,H=220;canvas.width=W;canvas.height=H;
+  const COLS=['#6366f1','#00d4ff','#f59e0b','#10b981','#818cf8','#f43f5e'];
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const nodes=12;
+    for(let i=0;i<=nodes;i++){
+      const y=i*(H/nodes);
+      const phase=t+i*.5;
+      const x1=W/2+Math.sin(phase)*10;
+      const x2=W/2+Math.sin(phase+Math.PI)*10;
+      const col=COLS[i%COLS.length];
+      ctx.beginPath();ctx.arc(x1,y,2.5,0,Math.PI*2);ctx.fillStyle=col+'ee';ctx.fill();
+      ctx.beginPath();ctx.arc(x2,y,2.5,0,Math.PI*2);ctx.fillStyle=col+'88';ctx.fill();
+      if(i<nodes&&i%2===0){
+        const yn=y+H/nodes*.5;
+        const xm1=W/2+Math.sin(phase+.25)*10,xm2=W/2+Math.sin(phase+Math.PI+.25)*10;
+        ctx.beginPath();ctx.moveTo(xm1,yn);ctx.lineTo(xm2,yn);
+        ctx.strokeStyle=col+'55';ctx.lineWidth=1;ctx.stroke();
+        ctx.beginPath();ctx.arc(xm1,yn,1.5,0,Math.PI*2);ctx.fillStyle=col+'aa';ctx.fill();
+        ctx.beginPath();ctx.arc(xm2,yn,1.5,0,Math.PI*2);ctx.fillStyle=col+'aa';ctx.fill();
+      }
+    }
+    for(let strand=0;strand<2;strand++){
+      ctx.beginPath();
+      const off=strand===0?0:Math.PI;
+      for(let y=0;y<=H;y+=2){
+        const phase2=t+(y/H)*nodes*.5;
+        const x=W/2+Math.sin(phase2+off)*10;
+        if(y===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle=strand===0?'rgba(99,102,241,0.35)':'rgba(0,212,255,0.25)';
+      ctx.lineWidth=1;ctx.stroke();
+    }
+    t+=0.03;requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ━━━━ CLICK PARTICLES ━━━━ */
+(function(){
+  if(window.innerWidth<=768)return;
+  const pal=['#6366f1','#818cf8','#00d4ff','#f59e0b','#10b981','#f43f5e'];
+  document.addEventListener('click',e=>{
+    for(let i=0;i<14;i++){
+      const p=document.createElement('div');
+      const a=Math.random()*Math.PI*2,v=40+Math.random()*90,sz=3+Math.random()*5;
+      Object.assign(p.style,{position:'fixed',width:sz+'px',height:sz+'px',left:e.clientX+'px',top:e.clientY+'px',background:pal[Math.floor(Math.random()*pal.length)],borderRadius:'50%',pointerEvents:'none',zIndex:99997,'--dx':Math.cos(a)*v+'px','--dy':Math.sin(a)*v+'px',animation:'cpf .6s ease-out forwards',animationDuration:(.3+Math.random()*.4)+'s'});
+      document.body.appendChild(p);setTimeout(()=>p.remove(),800);
+    }
+  });
+})();
+
+/* ━━━━ INIT ━━━━ */
+window.addEventListener('load',()=>{
+  /* FIX: No SmoothScroll.start() — native browser scroll is GPU-accelerated
+     and lag-free on both mobile touch and desktop trackpad/wheel */
+  initWebGL();
+  document.getElementById('btt')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+  setTimeout(()=>{initScrollReveal();initCounters();document.querySelectorAll('.rv').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight*.9)el.classList.add('visible');});},600);
+});
+</script>
+
+<style>
+@keyframes cpf{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+</style>
+</body>
+</html>
